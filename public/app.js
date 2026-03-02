@@ -1,5 +1,5 @@
 const { createApp } = Vue;
-
+const API_BASE = "https://cursor-s3z8.onrender.com"; // 
 createApp({
   data() {
     return {
@@ -27,7 +27,7 @@ createApp({
       const form = new FormData();
       form.append("file", file);
       try {
-        const res = await fetch("/api/upload", { method: "POST", body: form });
+        const res = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: form });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "上传失败");
         this.inputText = data.text || "";
@@ -47,7 +47,7 @@ createApp({
         return;
       }
       try {
-        const res = await fetch("/api/segment", {
+        const res = await fetch(`${API_BASE}/api/segment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
