@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>在线文本分词系统</title>
+  <link rel="stylesheet" href="/app.css" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <main class="wrap">
+      <header class="header">
+        <div>
+          <h1>在线文本分词系统</h1>
+          <p class="sub">支持手动输入或上传 TXT / Word 文档，分词结果高亮展示，可导出为文本或 Excel。</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="grid">
+          <div class="col">
+            <label class="label">输入文本</label>
+            <textarea
+              v-model="inputText"
+              class="textarea"
+              placeholder="在此输入或粘贴文本，或通过下方上传 TXT/Word 文件"
+              spellcheck="false"
+            ></textarea>
+            <div class="upload-row">
+              <input
+                ref="fileInput"
+                type="file"
+                accept=".txt,.docx"
+                class="file-input"
+                @change="onFileSelect"
+              />
+              <button type="button" class="btn btn-ghost" @click="triggerUpload">上传 TXT / Word 文件</button>
+              <span class="muted" v-if="fileName">{{ fileName }}</span>
+            </div>
+            <div class="hint">支持 .txt 与 .docx，单文件不超过 10MB；文本最多 20000 字。</div>
+          </div>
+
+          <div class="col">
+            <label class="label">分词参数</label>
+            <div class="controls">
+              <div class="row">
+                <label class="field">
+                  <span>分词模式</span>
+                  <select v-model="mode" class="select">
+                    <option value="precise">精确模式（推荐）</option>
+                    <option value="full">全模式</option>
+                    <option value="search">搜索引擎模式</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row">
+                <label class="check">
+                  <input type="checkbox" v-model="hmm" />
+                  <span>启用 HMM</span>
+                </label>
+                <label class="check">
+                  <input type="checkbox" v-model="filterStopwords" />
+                  <span>过滤停用词</span>
+                </label>
+              </div>
+              <div class="row actions">
+                <button class="btn" :disabled="loading" @click="doSegment">开始分词</button>
+                <button class="btn btn-ghost" @click="fillSample">填入示例</button>
+                <button class="btn btn-ghost" @click="clearAll">清空</button>
+              </div>
+              <div class="row meta">
+                <div>耗时：<span>{{ elapsed }}</span></div>
+                <div>词元数：<span>{{ count }}</span></div>
+              </div>
+              <div class="row">
+                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="copyResult">复制结果</button>
+                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="exportTxt">导出 TXT</button>
+                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="exportExcel">导出 Excel</button>
+              </div>
+              <div v-if="error" class="err">{{ error }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="resultHead">
+          <h2>分词结果（高亮展示）</h2>
+          <div class="muted">每个词元以高亮块显示，便于对比和检查。</div>
+        </div>
+        <div class="tokens tokens-highlight">
+          <template v-if="tokens.length">
+            <span v-for="(t, i) in tokens" :key="i" class="tok tok-highlight">{{ t.word }}</span>
+          </template>
+          <div v-else class="muted">暂无结果，请先输入文本并点击「开始分词」。</div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="muted">开发与部署说明见 README.md 与 docs/开发文档.md。</div>
+      </footer>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

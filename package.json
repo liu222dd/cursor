@@ -1,0 +1,17 @@
+{
+    "name": "segment-web",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "在线文本分词系统（网站 + API）",
+    "scripts": {
+        "dev": "node server/server.js",
+        "start": "node server/server.js"
+    },
+    "dependencies": {
+        "@node-rs/jieba": "^2.0.1",
+        "express": "^4.19.2",
+        "multer": "^1.4.5-lts.1",
+        "mammoth": "^1.6.0"
+    }
+}
