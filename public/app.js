@@ -4,6 +4,7 @@ createApp({
   data() {
     return {
       inputText: "",
+      activeTab: "text",
       mode: "precise",
       hmm: true,
       filterStopwords: false,
@@ -22,6 +23,7 @@ createApp({
     async onFileSelect(e) {
       const file = e.target.files?.[0];
       if (!file) return;
+      this.activeTab = "file";
       this.fileName = file.name;
       this.error = "";
       const form = new FormData();
@@ -80,6 +82,7 @@ createApp({
       this.count = "-";
       this.error = "";
       this.fileName = "";
+      this.activeTab = "text";
     },
     tokensToText() {
       return this.tokens.map((t) => t.word).filter(Boolean).join(" ");
