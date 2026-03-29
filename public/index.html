@@ -11,96 +11,133 @@
 <body>
   <div id="app">
     <main class="wrap">
-      <header class="header">
-        <div>
-          <h1>在线文本分词系统</h1>
-          <p class="sub">支持手动输入或上传 TXT / Word 文档，分词结果高亮展示，可导出为文本或 Excel。</p>
+      <header class="header card">
+        <div class="hero-top">
+          <div>
+            <h1>中文文本分词系统</h1>
+            <p class="sub">支持文本输入与文件上传，快速完成中文分词并导出结果。</p>
+          </div>
+          <div class="hero-badge">在线 NLP 工具</div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-label">当前字符数</span>
+            <span class="stat-value">{{ inputText.length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">分词数量</span>
+            <span class="stat-value">{{ tokens.length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">处理耗时</span>
+            <span class="stat-value">{{ elapsed }}</span>
+          </div>
         </div>
       </header>
 
-      <section class="card">
-        <div class="grid">
-          <div class="col">
-            <label class="label">输入文本</label>
+      <section class="feature-grid">
+        <article class="feature-card">
+          <h3>多种输入方式</h3>
+          <p>可直接粘贴文本，也可上传 TXT / DOCX 文件，适配常见中文处理场景。</p>
+        </article>
+        <article class="feature-card">
+          <h3>可配置分词参数</h3>
+          <p>支持精确、全模式、搜索模式，并可启用 HMM 与停用词过滤。</p>
+        </article>
+        <article class="feature-card">
+          <h3>结果可复用</h3>
+          <p>分词后可复制、导出 TXT 与 Excel，方便用于论文、分析与标注工作。</p>
+        </article>
+      </section>
+
+      <section class="showcase-grid">
+        <article class="card">
+          <h2 class="section-title">系统输入界面</h2>
+          <div class="tabs">
+            <button class="tab-btn" :class="{ active: activeTab === 'text' }" @click="activeTab = 'text'">文本输入</button>
+            <button class="tab-btn" :class="{ active: activeTab === 'file' }" @click="activeTab = 'file'">文件上传</button>
+          </div>
+
+          <div v-if="activeTab === 'text'" class="tab-panel">
             <textarea
               v-model="inputText"
               class="textarea"
-              placeholder="在此输入或粘贴文本，或通过下方上传 TXT/Word 文件"
+              placeholder="请输入要分词的中文文本..."
               spellcheck="false"
             ></textarea>
-            <div class="upload-row">
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".txt,.docx"
-                class="file-input"
-                @change="onFileSelect"
-              />
-              <button type="button" class="btn btn-ghost" @click="triggerUpload">上传 TXT / Word 文件</button>
-              <span class="muted" v-if="fileName">{{ fileName }}</span>
-            </div>
-            <div class="hint">支持 .txt 与 .docx，单文件不超过 10MB；文本最多 20000 字。</div>
-          </div>
-
-          <div class="col">
-            <label class="label">分词参数</label>
-            <div class="controls">
-              <div class="row">
-                <label class="field">
-                  <span>分词模式</span>
-                  <select v-model="mode" class="select">
-                    <option value="precise">精确模式（推荐）</option>
-                    <option value="full">全模式</option>
-                    <option value="search">搜索引擎模式</option>
-                  </select>
-                </label>
-              </div>
-              <div class="row">
-                <label class="check">
-                  <input type="checkbox" v-model="hmm" />
-                  <span>启用 HMM</span>
-                </label>
-                <label class="check">
-                  <input type="checkbox" v-model="filterStopwords" />
-                  <span>过滤停用词</span>
-                </label>
-              </div>
-              <div class="row actions">
-                <button class="btn" :disabled="loading" @click="doSegment">开始分词</button>
-                <button class="btn btn-ghost" @click="fillSample">填入示例</button>
-                <button class="btn btn-ghost" @click="clearAll">清空</button>
-              </div>
-              <div class="row meta">
-                <div>耗时：<span>{{ elapsed }}</span></div>
-                <div>词元数：<span>{{ count }}</span></div>
-              </div>
-              <div class="row">
-                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="copyResult">复制结果</button>
-                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="exportTxt">导出 TXT</button>
-                <button class="btn btn-small btn-ghost" :disabled="!tokens.length" @click="exportExcel">导出 Excel</button>
-              </div>
-              <div v-if="error" class="err">{{ error }}</div>
+            <div class="hint-row">
+              <span>{{ inputText.length }} 字符</span>
             </div>
           </div>
-        </div>
+
+          <div v-else class="tab-panel upload-panel" @click="triggerUpload">
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".txt,.docx"
+              class="file-input"
+              @change="onFileSelect"
+            />
+            <div class="upload-icon">⬆</div>
+            <p>点击或拖拽文件到此处</p>
+            <p class="muted">支持 TXT、Word（.txt、.docx）</p>
+            <p v-if="fileName" class="file-name">{{ fileName }}</p>
+          </div>
+
+          <button class="btn btn-main" :disabled="loading" @click="doSegment">
+            {{ loading ? "处理中..." : "开始分词" }}
+          </button>
+        </article>
+
+        <article class="card">
+          <h2 class="section-title">分词结果界面</h2>
+          <div class="result-box">
+            <template v-if="tokens.length">
+              <span v-for="(t, i) in tokens" :key="i" class="result-token">{{ t.word }}</span>
+            </template>
+            <p v-else class="muted">分词结果将在这里展示</p>
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-ghost" @click="fillSample">示例文本</button>
+            <button class="btn btn-ghost" @click="clearAll">清空</button>
+            <button class="btn btn-ghost" :disabled="!tokens.length" @click="copyResult">复制结果</button>
+            <button class="btn btn-ghost" :disabled="!tokens.length" @click="exportTxt">导出 TXT</button>
+            <button class="btn btn-ghost" :disabled="!tokens.length" @click="exportExcel">导出 Excel</button>
+          </div>
+          <div class="meta">
+            <span>耗时：{{ elapsed }}</span>
+            <span>词元数：{{ count }}</span>
+          </div>
+          <div class="controls-inline">
+            <label class="field">
+              <span>分词模式</span>
+              <select v-model="mode" class="select">
+                <option value="precise">精确模式（推荐）</option>
+                <option value="full">全模式</option>
+                <option value="search">搜索引擎模式</option>
+              </select>
+            </label>
+            <label class="check">
+              <input type="checkbox" v-model="hmm" />
+              <span>启用 HMM</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" v-model="filterStopwords" />
+              <span>过滤停用词</span>
+            </label>
+          </div>
+          <div v-if="error" class="err">{{ error }}</div>
+        </article>
       </section>
 
-      <section class="card">
-        <div class="resultHead">
-          <h2>分词结果（高亮展示）</h2>
-          <div class="muted">每个词元以高亮块显示，便于对比和检查。</div>
-        </div>
-        <div class="tokens tokens-highlight">
-          <template v-if="tokens.length">
-            <span v-for="(t, i) in tokens" :key="i" class="tok tok-highlight">{{ t.word }}</span>
-          </template>
-          <div v-else class="muted">暂无结果，请先输入文本并点击「开始分词」。</div>
-        </div>
+      <section class="card tips-card">
+        <h2 class="section-title">使用建议</h2>
+        <ul class="tips-list">
+          <li>长文本建议先清洗无关符号，再分词，结果更稳定。</li>
+          <li>需要较高召回时可选“搜索引擎模式”；追求可读性建议“精确模式”。</li>
+          <li>导出前可先复制结果到本地备份，避免误操作导致内容丢失。</li>
+        </ul>
       </section>
-
-      <footer class="footer">
-        <div class="muted">开发与部署说明见 README.md 与 docs/开发文档.md。</div>
-      </footer>
     </main>
   </div>
   <script src="/app.js"></script>
