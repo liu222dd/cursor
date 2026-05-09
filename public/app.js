@@ -1,5 +1,5 @@
 const { createApp } = Vue;
-const API_BASE = "https://cursor-s3z8.onrender.com"; // 
+const API_BASE = "https://cursor-s3z8.onrender.com";
 createApp({
   data() {
     return {
