@@ -13,7 +13,45 @@ const __dirname = dirname(__filename);
 const PORT = Number.parseInt(process.env.PORT ?? "8000", 10);
 
 const jieba = Jieba.withDict(dict);
+jieba.loadDict(readFileSync(join(__dirname, "..", "data", "custom_dict.txt")));
 jieba.cut("我来到北京清华大学", true);
+
+// 领域词集合（用于合并被拆开的词）
+const customTerms = new Set();
+const customDictPath = join(__dirname, "..", "data", "custom_dict.txt");
+if (existsSync(customDictPath)) {
+  const content = readFileSync(customDictPath, "utf-8");
+  content.split(/\r?\n/).forEach((line) => {
+    const clean = line.replace(/#.*$/, "").trim();
+    if (!clean) return;
+    const [term] = clean.split(/\s+/);
+    if (term) customTerms.add(term);
+  });
+}
+
+function mergeCustomTerms(words) {
+  if (!customTerms.size || words.length < 2) return words;
+  const maxChars = 24;
+  const merged = [];
+  let i = 0;
+  while (i < words.length) {
+    let bestEnd = -1;
+    let assembled = "";
+    for (let j = i; j < words.length; j += 1) {
+      assembled += words[j];
+      if (assembled.length > maxChars) break;
+      if (customTerms.has(assembled)) bestEnd = j;
+    }
+    if (bestEnd >= i + 1) {
+      merged.push(words.slice(i, bestEnd + 1).join(""));
+      i = bestEnd + 1;
+    } else {
+      merged.push(words[i]);
+      i += 1;
+    }
+  }
+  return merged;
+}
 
 // 停用词集合
 let stopwords = new Set();
@@ -91,12 +129,14 @@ app.post("/api/segment", (req, res) => {
   const t0 = performance.now();
   let words = [];
   if (mode === "full") {
+    // cutAll 无 HMM 参数；与 Python jieba 全模式一致
     words = jieba.cutAll(cleaned);
   } else if (mode === "search") {
-    words = jieba.cutForSearch(cleaned);
+    words = jieba.cutForSearch(cleaned, hmm);
   } else {
     words = jieba.cut(cleaned, hmm);
   }
+  words = mergeCustomTerms(words);
   const elapsedMs = performance.now() - t0;
 
   let tokens = words
@@ -117,6 +157,16 @@ app.post("/api/segment", (req, res) => {
 
 app.use(express.static(join(__dirname, "..", "public")));
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://127.0.0.1:${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err?.code === "EADDRINUSE") {
+    console.error(`端口 ${PORT} 已被占用。可任选其一：`);
+    console.error(`  1) 结束占用进程（PowerShell）：Get-NetTCPConnection -LocalPort ${PORT} -State Listen | Select OwningProcess`);
+    console.error(`  2) 换端口启动：$env:PORT=8001; npm run dev`);
+    process.exit(1);
+  }
+  throw err;
 });
