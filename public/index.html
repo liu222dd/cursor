@@ -117,8 +117,8 @@
                 <option value="search">搜索引擎模式</option>
               </select>
             </label>
-            <label class="check">
-              <input type="checkbox" v-model="hmm" />
+            <label class="check" title="全模式不使用 HMM；精确/搜索模式会传给分词引擎。">
+              <input type="checkbox" v-model="hmm" :disabled="mode === 'full'" />
               <span>启用 HMM</span>
             </label>
             <label class="check">
